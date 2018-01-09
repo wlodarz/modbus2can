@@ -23,6 +23,7 @@ class Can():
 	logger = None
 	port = None
 	lg_code = None
+	verbose = 0
 
 	def __init__(self, config, queue, params):
 		'''
@@ -35,57 +36,79 @@ class Can():
 		self.params = params
 
 		# prepare and start parameter updater process
-		self.updater_process = Process(target=self.updater_function, args=(queue, params))
+		self.updater_process = Process(target=self.updater_function, args=(queue,))
 		self.updater_process.start()
  
 		# prepare and start CAN process
-		self.hpsu_process = Process(target=self.hpsu_handler, args=(queue, params, ))
+		self.hpsu_process = Process(target=self.hpsu_handler, args=(queue,))
 		self.hpsu_process.start()
 
-	def updater_function(self, queue, params):
+	def updater_function(self, queue):
 		'''
 		'''
 
 		while True:
 			print("updating")
-			for param in params.paramNames():
+			for param in self.params.paramNames():
 				queue.put("g:"+param)
 			time.sleep(self.update_interval)
 
-	def hpsu_handler(self, queue, params):
+	def hpsu_handler(self, queue):
 		'''
 		'''
 
+		hpsu = HPSU(driver=self.driver, logger=self.logger, port=self.port, cmd=[], lg_code=self.lg_code)
 		while True:
 
 			# get command
 			t = queue.get()
 			cmd = t.strip().split(':')
+			paramName = cmd[1]
 			print(cmd)
 
-
 			if cmd[0] == 'g':
-				print("getter")
+				print("can getter")
 				setValue = None
 				cmd = [cmd[1]]
 				
 			if cmd[0] == 's':
-				print("setter")	
+				print("can setter")	
 				setValue = cmd[2]
 				cmd = [cmd[1], cmd[2]]
+			print(cmd)
 
-			hpsu = HPSU(driver=self.driver, logger=self.logger, port=self.port, cmd=cmd, lg_code=self.lg_code)
-			print(hpsu.commands)
+			# print(hpsu.commands)
 			for c in hpsu.commands:
-				rc = hpsu.sendCommand(c, setValue)
-				if rc != "KO":
-					if not setValue:
-						response = hpsu.parseCommand(cmd=c, response=rc, verbose=verbose)
-						resp = hpsu.umConversion(cmd=c, response=response, verbose=verbose)
-						params.setParam(c["name"], resp)
-						print("COMMAND OK")
-						print(c["name"])
-						print(resp)
-				else:
-					hpsu.printd('error', 'command %s failed' % (c["name"]))
+				if c['name'] == cmd[0]:
+					print(c)
+					if setValue:
+						# v = 
+						# v = int(float(setValue) * float(div))
+						print("Sending")
+						val = cmd[1]
+						div = c['div']
+						v = int(float(val) * float(div))
+						cmd[1] = str(v)
+						setValue = cmd[1]
+						print(v)
+						print(cmd)
+					else:
+						print("Receiving")
+					rc = hpsu.sendCommand(c, setValue)
+					if rc != "KO":
+						if not setValue:
+							print("Current value")
+							response = hpsu.parseCommand(cmd=c, response=rc, verbose=self.verbose)
+							resp = hpsu.umConversion(cmd=c, response=response, verbose=self.verbose)
+							div = c['div']
+							v = int(float(resp) * float(div))
+							print(div)
+							print(resp)
+							print(v)
+							print("GET COMMAND OK")
+							self.params.setParamByName(paramName, float(resp))
+						else:
+							print("SET COMMAND OK")
+					else:
+						hpsu.printd('error', 'command %s failed' % (c["name"]))
 
