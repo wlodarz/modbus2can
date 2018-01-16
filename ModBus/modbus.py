@@ -31,9 +31,10 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
 		print(address)
 		print(value)
 		v = 256*value[0] + value[1]
+                vv = float(v) / 10.0
 		print(v)
 		cmd = self.params.paramName(address)
-		s = 's:'+cmd+':'+str(v)
+		s = 's:'+cmd+':'+str(vv)
 		self.queue.put(s)
 		# # super(CallbackDataBlock, self).setValues(address, value)
 		# # self.queue.put((self.devices.get(address, None), value))
@@ -41,8 +42,9 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
 	def getValues(self, address, count=1):
 		print("getValues")
 		v = self.params.getParam(address)
-		high = (v & 0xff00 ) >> 8
-		low = v & 0x00ff
+                vv = int(float(v) * 10.0)
+		high = (vv & 0xff00 ) >> 8
+		low = vv & 0x00ff
 		return [high, low]
 
 class ModBus():
