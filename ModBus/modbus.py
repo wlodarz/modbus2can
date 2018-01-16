@@ -88,7 +88,7 @@ class ModBus():
 		'''
 
 		while True:
-			print("setter")
-			self.queue.put("s:test1:2")
+			print("modbus test setter")
+			#self.queue.put("s:t_dhw_setpoint1:49.00")
 			time.sleep(self.update_interval)
 

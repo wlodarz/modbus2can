@@ -10,11 +10,11 @@ class Params:
 	HOLD = 3
 
 	params = {
-		0x100 : { 'name' : "t_dhw", 'type': TYPE_UINT16, 'value' : 47.10, 'modbus_reg_addr' : 0x100, 'modbus_reg_type' : INPUT },
-#		0x102 : { 'name' : "t_hs", 'type' : TYPE_UINT16, 'value' : 3.0, 'modbus_reg_addr' : 0x101, 'modbus_reg_type' : INPUT },
-#		0x104 : { 'name' : "t_hc", 'type' : TYPE_UINT16, 'value' : 5.0, 'modbus_reg_addr' : 0x102, 'modbus_reg_type' : INPUT },
-		0x106 : { 'name' : "tdhw2", 'type' : TYPE_UINT16, 'value' : 5.0, 'modbus_reg_addr' : 0x102, 'modbus_reg_type' : INPUT },
-#		0x120 : { 'name' : "t_dhw_setpoint1", 'type': TYPE_UINT16, 'value' : 47.00, 'modbus_reg_addr' : 0x100, 'modbus_reg_type' : HOLD },
+                0x100 : { 'name' : "t_dhw", 'type': TYPE_UINT16, 'value' : 47.10, 'modbus_reg_addr' : 0x100, 'modbus_reg_type' : INPUT, 'modbus_scale' : 100 },
+                #0x102 : { 'name' : "t_hs", 'type' : TYPE_UINT16, 'value' : 3.0, 'modbus_reg_addr' : 0x101, 'modbus_reg_type' : INPUT, 'modbus_scale' : 100 },
+                #0x104 : { 'name' : "t_hc", 'type' : TYPE_UINT16, 'value' : 5.0, 'modbus_reg_addr' : 0x102, 'modbus_reg_type' : INPUT, 'modbus_scale' : 100 },
+                0x106 : { 'name' : "tdhw2", 'type' : TYPE_UINT16, 'value' : 5.0, 'modbus_reg_addr' : 0x102, 'modbus_reg_type' : INPUT, 'modbus_scale' : 100 },
+                #0x120 : { 'name' : "t_dhw_setpoint1", 'type': TYPE_UINT16, 'value' : 47.00, 'modbus_reg_addr' : 0x100, 'modbus_reg_type' : HOLD, 'modbus_scale' : 100 },
 	}
 
 	def paramNames(self):
@@ -57,6 +57,9 @@ class Params:
 	def getParam(self, address):
 		print(address)
 		p = self.params.get(address)
-		print(p)
-		return p['value']
+                if p != None:
+                    print(p)
+		    return p['value']
+                else:
+                    return None
 
