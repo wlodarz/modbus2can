@@ -4,4 +4,5 @@
 
 class config():
 
-	update_interval = 3
+    update_interval = 10
+    inter_param_interval = 1
