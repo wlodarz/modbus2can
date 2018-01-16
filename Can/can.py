@@ -109,7 +109,7 @@ class Can():
 							print(resp)
 							print(v)
 							print("GET COMMAND OK")
-							self.params.setParamByName(paramName, float(resp))
+							self.params.setValueByName(paramName, float(resp))
 						else:
 							print("SET COMMAND OK")
 					else:
