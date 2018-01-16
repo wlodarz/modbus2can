@@ -19,6 +19,7 @@ class Can():
 	''' A main modbus class.
 	'''
 	update_interval = 3
+        inter_param_interval = 1
 	driver = "PYCAN"
 	logger = None
 	port = None
@@ -31,6 +32,7 @@ class Can():
 		print("CanBus init")
 
 		self.update_interval = config.update_interval
+		self.inter_param_interval = config.inter_param_interval
 
 		self.queue = queue
 		self.params = params
@@ -51,6 +53,7 @@ class Can():
 			print("updating")
 			for param in self.params.paramNames():
 				queue.put("g:"+param)
+                                time.sleep(self.inter_param_interval)
 			time.sleep(self.update_interval)
 
 	def hpsu_handler(self, queue):
