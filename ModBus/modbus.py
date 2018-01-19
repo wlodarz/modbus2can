@@ -4,10 +4,12 @@
 
 import sys
 import params
-from multiprocessing import Queue, Process
+# from multiprocessing import Queue, Process
 import time
+import threading
 
 from pymodbus.server.async import StartSerialServer
+from pymodbus.server.async import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSparseDataBlock, ModbusSequentialDataBlock
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
@@ -27,13 +29,12 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
         super(CallbackDataBlock, self).__init__(0x00, [0]*0x3ff)
 
     def setValues(self, address, value):
-        print("setValues")
-        print(address)
-        print(value)
+        # print("setValues")
+        # print(address)
+        # print(value)
         p = self.params.getParam(address)
         v = 256*value[0] + value[1]
         vv = float(v) / p['modbus_div']
-        print(v)
         cmd = self.params.paramName(address)
         s = 's:'+cmd+':'+str(vv)
         self.queue.put(s)
@@ -41,8 +42,8 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
         # # self.queue.put((self.devices.get(address, None), value))
 
     def getValues(self, address, count=1):
-        print("getValues")
         v = self.params.getValue(address)
+        print('getValues {0:8} = {1:.1f}'.format(address, v))
         p = self.params.getParam(address)
         vv = int(float(v) * p['modbus_div'])
         high = (vv & 0xff00 ) >> 8
@@ -72,9 +73,6 @@ class ModBus():
             }
         context = ModbusServerContext(slaves=store, single=True)
 
-        # prepare and start CAN process
-        self.test_process = Process(target=self.setter_function, args=(queue, ))
-        self.test_process.start()
 
         identity = ModbusDeviceIdentification()
         identity.VendorName  = 'WK'
@@ -84,8 +82,14 @@ class ModBus():
         identity.ModelName   = 'ModBus Server'
         identity.MajorMinorRevision = '1.0'
 
+        # prepare and start ModBus process
+        self.test_thread = threading.Thread(target=self.setter_function, args=(queue, ))
+        self.test_thread.start()
+
         time = 2 # 5 seconds delay
-        StartSerialServer(context, identity=identity, port='/dev/ttyUSB0', stopbits=1, bytesize=8, parity='N', baudrate=9600, framer=ModbusRtuFramer)
+        # StartSerialServer(context, identity=identity, port='/dev/ttyUSB0', stopbits=1, bytesize=8, parity='N', baudrate=9600, framer=ModbusRtuFramer)
+        StartTcpServer(context, identity=identity, address=("0.0.0.0", 5020))
+
 
     def setter_function(self, queue):
         '''
@@ -94,5 +98,6 @@ class ModBus():
         while True:
            print("modbus test setter")
            #self.queue.put("s:t_dhw_setpoint1:49.00")
+           # print(self.params.params)
            time.sleep(self.update_interval)
 

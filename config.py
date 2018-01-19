@@ -4,5 +4,6 @@
 
 class config():
 
-    update_interval = 10
-    inter_param_interval = 1
+    update_interval = 20
+    inter_param_interval = 2
+    mqtt_update_interval = 6
