@@ -39,22 +39,37 @@ class Can():
         self.params = params
 
         # prepare and start parameter updater process
-        self.updater_thread = threading.Thread(target=self.updater_function, args=(queue,))
+        self.updater_thread = threading.Thread(target=self.updater_function)
         self.updater_thread.start()
  
         # prepare and start CAN process
         self.hpsu_thread = threading.Thread(target=self.hpsu_handler, args=(queue,))
         self.hpsu_thread.start()
 
-    def updater_function(self, queue):
+    def updater_function(self):
         '''
         '''
 
         while True:
-            print("updating")
-            for param in self.params.inputParamNames():
-                queue.put("g:"+param)
+            print("CAN: updating")
+            for name in self.params.inputParamNames():
+                print('CAN: updating param ' + name)
+                self.queue.put("g:"+name)
                 time.sleep(self.inter_param_interval)
+
+            for name in self.params.holdParamNames():
+                print('CAN: trying HOLD param {0:10}'.format(name))
+                if self.params.paramChanged(name) != 0:
+                    print('CAN: param {0:20} changed'.format(name))
+                    v = self.params.getValueByName(name)
+                    self.queue.put("s:"+name+":"+str(v))
+
+            for name in self.params.holdParamNames():
+                print('CAN: updating param ' + name)
+                self.queue.put("g:"+name)
+                time.sleep(self.inter_param_interval)
+
+
             time.sleep(self.update_interval)
 
     def hpsu_handler(self, queue):
@@ -79,7 +94,8 @@ class Can():
                 # print("can setter")	
                 setValue = cmd[2]
                 cmd = [cmd[1], cmd[2]]
-            # print(cmd)
+                print('CAN SET')
+                print(cmd)
 
             # print(hpsu.commands)
             for c in hpsu.commands:
@@ -95,24 +111,26 @@ class Can():
                             cmd[1] = str(v)
                             setValue = cmd[1]
                             # print(v)
-                            # print(cmd)
+                            print('CAN: sending set command {0} {1}'.format(c, setValue))
+                    
+                    # print("Receiving")
+                    rc = hpsu.sendCommand(c, setValue)
+                    if rc != "KO":
+                        if not setValue:
+                            # print("Current value")
+                            response = hpsu.parseCommand(cmd=c, response=rc, verbose=self.verbose)
+                            resp = hpsu.umConversion(cmd=c, response=response, verbose=self.verbose)
+                            div = c['div']
+                            v = int(float(resp) * float(div))
+                            # print(div)
+                            # print(resp)
+                            # print(v)
+                            # print("GET COMMAND OK")
+                            self.params.setValueByName(paramName, float(resp))
+                            print("CAN: GET COMMAND OK")
+                        else:
+                            self.params.setParamChanged(paramName, 0)
+                            print("CAN: SET COMMAND OK")
                     else:
-                            # print("Receiving")
-                            rc = hpsu.sendCommand(c, setValue)
-                            if rc != "KO":
-                                if not setValue:
-                                    # print("Current value")
-                                    response = hpsu.parseCommand(cmd=c, response=rc, verbose=self.verbose)
-                                    resp = hpsu.umConversion(cmd=c, response=response, verbose=self.verbose)
-                                    div = c['div']
-                                    v = int(float(resp) * float(div))
-                                    # print(div)
-                                    # print(resp)
-                                    # print(v)
-                                    # print("GET COMMAND OK")
-                                    self.params.setValueByName(paramName, float(resp))
-                                else:
-                                    print("SET COMMAND OK")
-                            else:
-                                hpsu.printd('error', 'command %s failed' % (c["name"]))
+                        hpsu.printd('CAN: error', 'command %s failed' % (c["name"]))
 

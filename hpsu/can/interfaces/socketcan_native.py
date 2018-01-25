@@ -15,7 +15,7 @@ import logging
 
 logging.basicConfig()
 log = logging.getLogger('can.socketcan.native')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.ERROR)
 log.debug("Loading native socket can implementation")
 
 try:
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     #     modprobe vcan
     #     ip link add dev vcan0 type vcan
     #     ifconfig vcan0 up
-    log.setLevel(logging.DEBUG)
+    # log.setLevel(logging.DEBUG)
 
     def receiver(e):
         receiver_socket = createSocket()

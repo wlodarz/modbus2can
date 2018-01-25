@@ -28,7 +28,7 @@ def main(argv):
     can = Can(config, queue, params)
 
     # prepare ModBus object handler
-    modbus = ModBus(config, queue, params)
+    modbus = ModBus(config, params)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -19,13 +19,15 @@ import logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
+fh = logging.FileHandler('modbus.log')
+fh.setLevel(logging.DEBUG)
+log.addHandler(fh)
 
 # class CallbackDataBlock(ModbusSparseDataBlock):
 class CallbackDataBlock(ModbusSequentialDataBlock):
-    def __init__(self, params, queue):
+    def __init__(self, params):
         print("init")
         self.params = params
-        self.queue = queue
         super(CallbackDataBlock, self).__init__(0x00, [0]*0x3ff)
 
     def setValues(self, address, value):
@@ -35,14 +37,16 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
         p = self.params.getParam(address)
         v = 256*value[0] + value[1]
         vv = float(v) / p['modbus_div']
-        cmd = self.params.paramName(address)
-        s = 's:'+cmd+':'+str(vv)
-        self.queue.put(s)
+        param_name = self.params.paramNameByAddress(address)
+        s = 's:'+param_name+':'+str(vv)
+        self.params.setValueByName(param_name, vv)
+        self.params.setParamChanged(param_name, 1)
+        # SHOULD BE UNCOMMENT WHEN MODBUS ENABLED - self.queue.put(s)
         # # super(CallbackDataBlock, self).setValues(address, value)
         # # self.queue.put((self.devices.get(address, None), value))
 
     def getValues(self, address, count=1):
-        v = self.params.getValue(address)
+        v = self.params.getValueByAddress(address)
         print('getValues {0:8} = {1:.1f}'.format(address, v))
         p = self.params.getParam(address)
         vv = int(float(v) * p['modbus_div'])
@@ -56,17 +60,16 @@ class ModBus():
 
     update_interval = 1
 
-    def __init__(self, config, queue, params):
+    def __init__(self, config, params):
         '''
         '''
         print("ModBus init")
 
         self.update_interval = config.update_interval
 
-        self.queue = queue
         self.params = params
 
-        block   = CallbackDataBlock(params, queue)
+        block   = CallbackDataBlock(params)
         store   = ModbusSlaveContext(di=block, co=block, hr=block, ir=block, zero_mode=True)
         slave = {
                 0x02: store,
@@ -83,15 +86,15 @@ class ModBus():
         identity.MajorMinorRevision = '1.0'
 
         # prepare and start ModBus process
-        self.test_thread = threading.Thread(target=self.setter_function, args=(queue, ))
-        self.test_thread.start()
+        # self.test_thread = threading.Thread(target=self.setter_function, args=(queue, ))
+        # self.test_thread.start()
 
         time = 2 # 5 seconds delay
-        # StartSerialServer(context, identity=identity, port='/dev/ttyUSB0', stopbits=1, bytesize=8, parity='N', baudrate=9600, framer=ModbusRtuFramer)
-        StartTcpServer(context, identity=identity, address=("0.0.0.0", 5020))
+        StartSerialServer(context, identity=identity, port='/dev/ttyUSB0', stopbits=1, bytesize=8, parity='N', baudrate=9600, framer=ModbusRtuFramer)
+        # StartTcpServer(context, identity=identity, address=("0.0.0.0", 5020))
 
 
-    def setter_function(self, queue):
+    def setter_function(self):
         '''
         '''
 
