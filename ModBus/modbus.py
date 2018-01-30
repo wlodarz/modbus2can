@@ -19,9 +19,9 @@ import logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
-fh = logging.FileHandler('modbus.log')
-fh.setLevel(logging.DEBUG)
-log.addHandler(fh)
+# fh = logging.FileHandler('modbus.log')
+# fh.setLevel(logging.DEBUG)
+# log.addHandler(fh)
 
 # class CallbackDataBlock(ModbusSparseDataBlock):
 class CallbackDataBlock(ModbusSequentialDataBlock):
@@ -52,7 +52,8 @@ class CallbackDataBlock(ModbusSequentialDataBlock):
         vv = int(float(v) * p['modbus_div'])
         high = (vv & 0xff00 ) >> 8
         low = vv & 0x00ff
-        return [high, low]
+        # return [high, low]
+        return [vv]
 
 class ModBus():
     ''' A main modbus class.
