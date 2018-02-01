@@ -19,23 +19,26 @@ import logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
-# fh = logging.FileHandler('modbus.log')
-# fh.setLevel(logging.DEBUG)
-# log.addHandler(fh)
+fh = logging.FileHandler('modbus.log')
+fh.setLevel(logging.DEBUG)
+log.addHandler(fh)
 
 # class CallbackDataBlock(ModbusSparseDataBlock):
 class CallbackDataBlock(ModbusSequentialDataBlock):
     def __init__(self, params):
-        print("init")
+        log.debug("init")
         self.params = params
         super(CallbackDataBlock, self).__init__(0x00, [0]*0x3ff)
 
     def setValues(self, address, value):
-        # print("setValues")
-        # print(address)
-        # print(value)
+        log.debug("setValues addr {0} v {1}".format(address, value))
+        
         p = self.params.getParam(address)
-        v = 256*value[0] + value[1]
+        v = 0
+        for i in range(0, len(value)):
+            a = pow(256, i)
+            v += (value[i] * a)
+
         vv = float(v) / p['modbus_div']
         param_name = self.params.paramNameByAddress(address)
         s = 's:'+param_name+':'+str(vv)
